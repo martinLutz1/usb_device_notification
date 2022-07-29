@@ -59,7 +59,7 @@ public:
         std::cout << "device removed: " <<  device_path << "\n";
     }
 
-    struct DeviceNotificationImpl;
+    class DeviceNotificationImpl;
 
 private:
     DeviceNotificationImpl* impl;
