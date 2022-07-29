@@ -22,12 +22,12 @@ public:
     // but this could be overridden - just implement your own versions of these methods as needed.
     virtual void device_arrived(const std::string& device_path, void* lparam)
     {
-        std::cout << "new device    : " <<  device_path << "\n";
+        std::cout << "new device    : " <<  device_path << std::endl;
     }
 
     virtual void device_removed(const std::string& device_path, void* lparam)
     {
-        std::cout << "device removed: " <<  device_path << "\n";
+        std::cout << "device removed: " <<  device_path << std::endl;
     }
 };
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     // and add line: "KERNEL=="hidraw*", MODE="0666" (if you don't have it already)
     notif.init("hidraw");
 
-    std::cout << " waiting for new HID devices.. \n";
+    std::cout << " waiting for new HID devices.." << std::endl;
 
     #ifndef USE_PTHREADS
     notif.run_from_thread();
