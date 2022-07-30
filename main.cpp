@@ -5,33 +5,28 @@
  * @brief   simple example on how to use monitor.
  */
 
-
 // you can use PTHREADs if you wish to run the monitor
 // in the context of pthread. Define USE_PTHREADS for the project.
 // Otherwise, if you won't define
 // it - call 'run_from_thread()' method from your own thread.
 
-#include <device_notification.h>
-
+#include <usb_device_notification/device_notification.h>
 
 class MyDeviceNotif : public DeviceNotification
 {
 public:
-
     // default implementation (in base class) only prints out the device path etc,
     // but this could be overridden - just implement your own versions of these methods as needed.
-    virtual void device_arrived(const std::string& device_path, void* lparam)
+    virtual void device_arrived(const std::string &device_path, void *lparam)
     {
-        std::cout << "new device    : " <<  device_path << std::endl;
+        std::cout << "new device    : " << device_path << std::endl;
     }
 
-    virtual void device_removed(const std::string& device_path, void* lparam)
+    virtual void device_removed(const std::string &device_path, void *lparam)
     {
-        std::cout << "device removed: " <<  device_path << std::endl;
+        std::cout << "device removed: " << device_path << std::endl;
     }
 };
-
-
 
 int main(int argc, char **argv)
 {
@@ -44,18 +39,14 @@ int main(int argc, char **argv)
 
     std::cout << " waiting for new HID devices.." << std::endl;
 
-    #ifndef USE_PTHREADS
+#ifndef USE_PTHREADS
     notif.run_from_thread();
-    #endif
+#endif
 
-
-    while(true)
+    while (true)
     {
         // ...
     }
 
     return 0;
 }
-
-
-

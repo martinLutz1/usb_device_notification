@@ -27,10 +27,9 @@
  * CONNECTION
  */
 
-#include <device_notification.h>
+#include <usb_device_notification/device_notification.h>
 #include <string>
 #include <stdexcept>
-
 
 // you can use PTHREADs if you wish to run the monitor
 // in the context of pthread. Otherwise, if you won't define
@@ -64,46 +63,45 @@
 
 extern "C"
 {
-    #include<SetupAPI.h>
+#include <SetupAPI.h>
 }
 
 class DeviceNotification::DeviceNotificationImpl
 {
 public:
-    DeviceNotificationImpl(DeviceNotification* the_parent);
+    DeviceNotificationImpl(DeviceNotification *the_parent);
     ~DeviceNotificationImpl();
-    void init(const std::string& dev_subsystem);
+    void init(const std::string &dev_subsystem);
     void run_from_thread();
 
 private:
     void cancel();
-    GUID translate_type(const std::string& dev_subsystem);
+    GUID translate_type(const std::string &dev_subsystem);
     void create_msg_window();
     void destroy_msg_window();
-    static LRESULT _message_handler(HWND__* hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-    #ifdef USE_PTHREADS
-    static void* monitor_thread_fcn(void* arg);
+    static LRESULT _message_handler(HWND__ *hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+#ifdef USE_PTHREADS
+    static void *monitor_thread_fcn(void *arg);
     void start_thread();
-    #endif /*USE_PTHREADS*/
+#endif /*USE_PTHREADS*/
 
 private:
     HWND hwnd;
     HDEVNOTIFY dev_notif;
     GUID guid;
-    const char* class_name;
-    DeviceNotification* parent;
+    const char *class_name;
+    DeviceNotification *parent;
     volatile bool wait_for_dev_changes;
     volatile bool initialised;
     IF_USING_PTHREADS(pthread_t monitor_thread);
 };
 
-DeviceNotification::DeviceNotificationImpl::DeviceNotificationImpl(DeviceNotification* the_parent) :
-    hwnd(NULL),
-    dev_notif(NULL),
-    class_name("DeviceNotificationImpl"),
-    parent(the_parent),
-    wait_for_dev_changes(true),
-    initialised(false)
+DeviceNotification::DeviceNotificationImpl::DeviceNotificationImpl(DeviceNotification *the_parent) : hwnd(NULL),
+                                                                                                     dev_notif(NULL),
+                                                                                                     class_name("DeviceNotificationImpl"),
+                                                                                                     parent(the_parent),
+                                                                                                     wait_for_dev_changes(true),
+                                                                                                     initialised(false)
 {
     IF_USING_PTHREADS(monitor_thread = 0);
 }
@@ -113,9 +111,9 @@ DeviceNotification::DeviceNotificationImpl::~DeviceNotificationImpl()
     cancel();
 }
 
-void DeviceNotification:: DeviceNotification::DeviceNotificationImpl::cancel()
+void DeviceNotification::DeviceNotification::DeviceNotificationImpl::cancel()
 {
-    if(initialised && wait_for_dev_changes)
+    if (initialised && wait_for_dev_changes)
     {
         wait_for_dev_changes = false;
         initialised = false;
@@ -126,24 +124,24 @@ void DeviceNotification:: DeviceNotification::DeviceNotificationImpl::cancel()
     }
 }
 
-void DeviceNotification::DeviceNotificationImpl::init(const std::string& dev_subsystem)
+void DeviceNotification::DeviceNotificationImpl::init(const std::string &dev_subsystem)
 {
     cancel();
     guid = translate_type(dev_subsystem);
     wait_for_dev_changes = true;
     initialised = false;
-    #ifdef USE_PTHREADS
+#ifdef USE_PTHREADS
     start_thread();
-    int retry_cnt = INITIALISATION_TIMEOUT_MS/10;
-    while(!initialised && retry_cnt > 0)
+    int retry_cnt = INITIALISATION_TIMEOUT_MS / 10;
+    while (!initialised && retry_cnt > 0)
     {
         Sleep(10);
         retry_cnt--;
     }
-    #else // we need to create window from that other thread context..
+#else // we need to create window from that other thread context..
     create_msg_window(); // create a new one..
-    #endif
-    if(!initialised)
+#endif
+    if (!initialised)
     {
         throw std::runtime_error("DeviceNotificationImpl::Init() error: Could not initialise");
     }
@@ -153,19 +151,19 @@ void DeviceNotification::DeviceNotificationImpl::run_from_thread()
 {
     IF_USING_PTHREADS(create_msg_window()); // we need to create our msg window from the thread context..
     MSG msg;
-    while(wait_for_dev_changes && GetMessage( &msg, hwnd, 0, 0 ) > 0)
+    while (wait_for_dev_changes && GetMessage(&msg, hwnd, 0, 0) > 0)
     {
-        TranslateMessage( &msg );
-        DispatchMessage( &msg );
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
 }
 
 const GUID usb_guid = {0xA5DCBF10, 0x6530, 0x11D2, {0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED}};
-const GUID hid_guid = {0x4d1e55b2, 0xf16f, 0x11cf,{ 0x88, 0xcb, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30}};
-GUID DeviceNotification::DeviceNotificationImpl::translate_type(const std::string& dev_subsystem)
+const GUID hid_guid = {0x4d1e55b2, 0xf16f, 0x11cf, {0x88, 0xcb, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30}};
+GUID DeviceNotification::DeviceNotificationImpl::translate_type(const std::string &dev_subsystem)
 {
     GUID new_guid = usb_guid; // usb by default
-    if(dev_subsystem.size() >= 3 && dev_subsystem.substr(0,3)== "hid")
+    if (dev_subsystem.size() >= 3 && dev_subsystem.substr(0, 3) == "hid")
     {
         new_guid = hid_guid;
     }
@@ -191,7 +189,7 @@ void DeviceNotification::DeviceNotificationImpl::create_msg_window()
         hwnd = CreateWindow(class_name, "NotifMsgWindow", WS_ICONIC, 0, 0,
                             CW_USEDEFAULT, 0, HWND_MESSAGE, NULL,
                             GetModuleHandle(0), this);
-        if(hwnd == NULL || dev_notif == NULL)
+        if (hwnd == NULL || dev_notif == NULL)
         {
             throw std::runtime_error("DeviceNotificationImpl::Init() error: Could not create");
         }
@@ -202,11 +200,11 @@ void DeviceNotification::DeviceNotificationImpl::destroy_msg_window()
 {
     if (dev_notif != NULL)
     {
-        UnregisterDeviceNotification (dev_notif);
+        UnregisterDeviceNotification(dev_notif);
         dev_notif = NULL;
     }
 
-    if(hwnd != NULL)
+    if (hwnd != NULL)
     {
         DestroyWindow(hwnd);
         CloseHandle(hwnd);
@@ -214,69 +212,69 @@ void DeviceNotification::DeviceNotificationImpl::destroy_msg_window()
     }
 }
 
-LRESULT DeviceNotification::DeviceNotificationImpl::_message_handler(HWND__* hwnd, UINT message, WPARAM wparam, LPARAM lparam)
+LRESULT DeviceNotification::DeviceNotificationImpl::_message_handler(HWND__ *hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
     LRESULT ret = 0L;
-    static DeviceNotificationImpl* self = NULL;
+    static DeviceNotificationImpl *self = NULL;
 
     switch (message)
     {
-        case WM_NCCREATE: // before window creation
-        {
-            ret = 1L; // should return TRUE to continue creation
-            break;
-        }
+    case WM_NCCREATE: // before window creation
+    {
+        ret = 1L; // should return TRUE to continue creation
+        break;
+    }
 
-        case WM_CREATE: // the actual creation of the window (should return 0 to continue creation)
+    case WM_CREATE: // the actual creation of the window (should return 0 to continue creation)
+    {
+        if (self == NULL)
         {
-            if (self == NULL)
-            {
-                self = (DeviceNotificationImpl*) ((CREATESTRUCT*) (lparam))->lpCreateParams;
-            }
-            if (self != NULL && self->wait_for_dev_changes)
-            {
-                GUID InterfaceClassGuid = self->guid;
-                DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
-                ZeroMemory( &NotificationFilter, sizeof(NotificationFilter) );
-                NotificationFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
-                NotificationFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
-                NotificationFilter.dbcc_classguid = InterfaceClassGuid;
-                self->dev_notif = RegisterDeviceNotification(hwnd, &NotificationFilter,
-                        DEVICE_NOTIFY_WINDOW_HANDLE);
-                ret = 0L;
-                self->initialised = true;
-            }
-            else
-            {
-                ret = 1L;
-            }
-            break;
+            self = (DeviceNotificationImpl *)((CREATESTRUCT *)(lparam))->lpCreateParams;
         }
-
-        case WM_DEVICECHANGE:
+        if (self != NULL && self->wait_for_dev_changes)
         {
-            if (self && self->wait_for_dev_changes)
+            GUID InterfaceClassGuid = self->guid;
+            DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
+            ZeroMemory(&NotificationFilter, sizeof(NotificationFilter));
+            NotificationFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
+            NotificationFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
+            NotificationFilter.dbcc_classguid = InterfaceClassGuid;
+            self->dev_notif = RegisterDeviceNotification(hwnd, &NotificationFilter,
+                                                         DEVICE_NOTIFY_WINDOW_HANDLE);
+            ret = 0L;
+            self->initialised = true;
+        }
+        else
+        {
+            ret = 1L;
+        }
+        break;
+    }
+
+    case WM_DEVICECHANGE:
+    {
+        if (self && self->wait_for_dev_changes)
+        {
+            PDEV_BROADCAST_HDR lpdb = (PDEV_BROADCAST_HDR)lparam;
+            PDEV_BROADCAST_DEVICEINTERFACE lpdbv = (PDEV_BROADCAST_DEVICEINTERFACE)lpdb;
+            std::string path;
+            if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
             {
-                PDEV_BROADCAST_HDR lpdb = (PDEV_BROADCAST_HDR) lparam;
-                PDEV_BROADCAST_DEVICEINTERFACE lpdbv = (PDEV_BROADCAST_DEVICEINTERFACE) lpdb;
-                std::string path;
-                if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
+                path = std::string(lpdbv->dbcc_name);
+                switch (wparam)
                 {
-                    path = std::string(lpdbv->dbcc_name);
-                    switch (wparam)
-                    {
-                        case DBT_DEVICEARRIVAL:
-                        self->parent->device_arrived(path, (void*) lparam);
-                        break;
+                case DBT_DEVICEARRIVAL:
+                    self->parent->device_arrived(path, (void *)lparam);
+                    break;
 
-                        case DBT_DEVICEREMOVECOMPLETE:
-                        self->parent->device_removed(path, (void*) lparam);
-                        break;
-                    }
+                case DBT_DEVICEREMOVECOMPLETE:
+                    self->parent->device_removed(path, (void *)lparam);
+                    break;
                 }
             }
-            break;
         }
+        break;
+    }
     }
     return ret;
 }
@@ -290,33 +288,31 @@ LRESULT DeviceNotification::DeviceNotificationImpl::_message_handler(HWND__* hwn
 class DeviceNotification::DeviceNotificationImpl
 {
 public:
-    DeviceNotificationImpl(DeviceNotification* the_parent);
+    DeviceNotificationImpl(DeviceNotification *the_parent);
     ~DeviceNotificationImpl();
-    void init(const std::string& dev_subsystem);
+    void init(const std::string &dev_subsystem);
     void run_from_thread();
 
 private:
     void cancel();
-    void init_device_monitor(const std::string& dev_subsystem);
+    void init_device_monitor(const std::string &dev_subsystem);
     void release_device_monitor();
-    #ifdef USE_PTHREADS
-    static void* monitor_thread_fcn(void* arg);
+#ifdef USE_PTHREADS
+    static void *monitor_thread_fcn(void *arg);
     void start_thread();
-    #endif /*USE_PTHREADS*/
+#endif /*USE_PTHREADS*/
 
     udev *dev_udev;
-    udev_monitor* dev_mon;
-    DeviceNotification* parent;
+    udev_monitor *dev_mon;
+    DeviceNotification *parent;
     volatile bool wait_for_dev_changes;
     IF_USING_PTHREADS(pthread_t monitor_thread);
 };
 
-
-DeviceNotification::DeviceNotificationImpl::DeviceNotificationImpl(DeviceNotification* the_parent) :
-    dev_udev(NULL),
-    dev_mon(NULL),
-    parent(the_parent),
-    wait_for_dev_changes(true)
+DeviceNotification::DeviceNotificationImpl::DeviceNotificationImpl(DeviceNotification *the_parent) : dev_udev(NULL),
+                                                                                                     dev_mon(NULL),
+                                                                                                     parent(the_parent),
+                                                                                                     wait_for_dev_changes(true)
 {
     IF_USING_PTHREADS(monitor_thread = 0);
 }
@@ -329,7 +325,7 @@ DeviceNotification::DeviceNotificationImpl::~DeviceNotificationImpl()
 
 void DeviceNotification::DeviceNotificationImpl::cancel()
 {
-    if(wait_for_dev_changes)
+    if (wait_for_dev_changes)
     {
         wait_for_dev_changes = false;
         IF_USING_PTHREADS(pthread_cancel(monitor_thread));
@@ -337,11 +333,10 @@ void DeviceNotification::DeviceNotificationImpl::cancel()
     }
 }
 
-
-void DeviceNotification::DeviceNotificationImpl::init(const std::string& dev_subsystem)
+void DeviceNotification::DeviceNotificationImpl::init(const std::string &dev_subsystem)
 {
     cancel();
-    if(dev_udev || dev_mon)
+    if (dev_udev || dev_mon)
     {
         release_device_monitor();
     }
@@ -349,13 +344,13 @@ void DeviceNotification::DeviceNotificationImpl::init(const std::string& dev_sub
     wait_for_dev_changes = true;
 }
 
-void DeviceNotification::DeviceNotificationImpl::init_device_monitor(const std::string& dev_subsystem)
+void DeviceNotification::DeviceNotificationImpl::init_device_monitor(const std::string &dev_subsystem)
 {
     dev_udev = udev_new();
-    if(dev_udev != NULL)
+    if (dev_udev != NULL)
     {
         dev_mon = udev_monitor_new_from_netlink(dev_udev, "udev");
-        if(dev_mon != NULL)
+        if (dev_mon != NULL)
         {
             udev_monitor_filter_add_match_subsystem_devtype(dev_mon,
                                                             dev_subsystem.c_str(),
@@ -368,17 +363,16 @@ void DeviceNotification::DeviceNotificationImpl::init_device_monitor(const std::
     throw std::runtime_error("DeviceNotificationImpl::Init() error: Could not create");
 }
 
-
 void DeviceNotification::DeviceNotificationImpl::release_device_monitor()
 {
-    if(dev_mon != NULL)
+    if (dev_mon != NULL)
     {
         udev_monitor_filter_remove(dev_mon);
         udev_monitor_unref(dev_mon);
         dev_mon = NULL;
     }
 
-    if(dev_udev != NULL)
+    if (dev_udev != NULL)
     {
         udev_unref(dev_udev);
         dev_udev = NULL;
@@ -398,37 +392,37 @@ void DeviceNotification::DeviceNotificationImpl::run_from_thread()
         FD_SET(fd, &fds);
         tv.tv_sec = 0;
         tv.tv_usec = 250 * 1000; // 250ms
-        ret = select(fd+1, &fds, NULL, NULL, &tv);
+        ret = select(fd + 1, &fds, NULL, NULL, &tv);
 
         if (ret > 0 && FD_ISSET(fd, &fds))
         {
-            struct udev_device* dev;
+            struct udev_device *dev;
             dev = udev_monitor_receive_device(dev_mon);
             if (dev)
             {
                 std::string path; // TODO( udev_get_dev_path(dev_udev));
                 path += "/";
-                const char* p = udev_device_get_sysname(dev);
-                if(p)
+                const char *p = udev_device_get_sysname(dev);
+                if (p)
                 {
                     path += p;
-                    const char* a = udev_device_get_action(dev);
-                    if(a)
+                    const char *a = udev_device_get_action(dev);
+                    if (a)
                     {
                         // get parent device to allow clients to get USB dev info.
                         dev = udev_device_get_parent_with_subsystem_devtype(
-                               dev,
-                               "usb",
-                               "usb_device");
+                            dev,
+                            "usb",
+                            "usb_device");
 
                         std::string action(a);
-                        if(action == "add")
+                        if (action == "add")
                         {
-                            parent->device_arrived(path, (void*)dev);
+                            parent->device_arrived(path, (void *)dev);
                         }
                         else // (action == "remove")
                         {
-                            parent->device_removed(path, (void*)dev);
+                            parent->device_removed(path, (void *)dev);
                         }
                     }
                 }
@@ -440,18 +434,17 @@ void DeviceNotification::DeviceNotificationImpl::run_from_thread()
 
 #endif /* (not WINDOWS) */
 
-
 #ifdef USE_PTHREADS
-void* DeviceNotification::DeviceNotificationImpl::monitor_thread_fcn(void* arg)
+void *DeviceNotification::DeviceNotificationImpl::monitor_thread_fcn(void *arg)
 {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-    DeviceNotificationImpl* self = (DeviceNotificationImpl*) arg;
-    if(self != NULL)
+    DeviceNotificationImpl *self = (DeviceNotificationImpl *)arg;
+    if (self != NULL)
     {
         self->run_from_thread();
     }
-    return (void*) NULL;
+    return (void *)NULL;
 }
 
 void DeviceNotification::DeviceNotificationImpl::start_thread()
@@ -459,8 +452,8 @@ void DeviceNotification::DeviceNotificationImpl::start_thread()
     int ret = pthread_create(&monitor_thread,
                              NULL,
                              monitor_thread_fcn,
-                             (void*) this);
-    if(ret)
+                             (void *)this);
+    if (ret)
     {
         throw std::runtime_error("creation of monitor thread failed!");
     }
@@ -474,8 +467,7 @@ void DeviceNotification::run_from_thread()
 }
 #endif /*USE_PTHREADS*/
 
-DeviceNotification::DeviceNotification() :
-    impl (new DeviceNotificationImpl(this))
+DeviceNotification::DeviceNotification() : impl(new DeviceNotificationImpl(this))
 {
 }
 
@@ -484,8 +476,7 @@ DeviceNotification::~DeviceNotification()
     delete impl;
 }
 
-void DeviceNotification::init(const std::string& dev_subsystem)
+void DeviceNotification::init(const std::string &dev_subsystem)
 {
     impl->init(dev_subsystem);
 }
-
